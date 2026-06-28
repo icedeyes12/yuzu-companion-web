@@ -3,7 +3,7 @@ import { Geist, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 const geist = Geist({
-  variable: "--font-main",
+  variable: "--font-geist",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
 });
@@ -25,10 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${plexMono.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-[#09090B]">
-        {children}
-      </body>
+    <html lang="en" className={`${geist.variable} ${plexMono.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
