@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #09090B;
+  --card: #111113;
+  --border: #27272A;
+  --text: #FAFAFA;
+  --muted: #A1A1AA;
+  --accent: #FF6FAE;
+  --online: #10B981;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
