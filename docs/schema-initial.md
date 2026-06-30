@@ -10,15 +10,18 @@ This is the first-pass schema for the server-side system of record.
 - Prefer client-side encrypted storage for sensitive provider credentials.
 - Keep public catalog data separate from private local character data.
 - Use credit ledger entries instead of mutating a single balance field with no history.
+- Use Postgres as the first and primary server database.
 
 ---
 
 ## Core Entities
 
 ### users
+
 Represents the internal account owner.
 
 Fields:
+
 - `id` UUID primary key
 - `handle` text unique, human-readable account name
 - `display_name` text nullable
@@ -29,15 +32,18 @@ Fields:
 - `last_login_at` timestamptz nullable
 
 Notes:
+
 - `handle` should be stable.
 - `avatar_url` is for public or synced account-level avatars only.
 
 ---
 
 ### auth_identities
+
 Stores linked login methods for a user.
 
 Fields:
+
 - `id` UUID primary key
 - `user_id` UUID foreign key -> `users.id`
 - `provider` text not null (`google`, `github`, later others)
@@ -48,15 +54,18 @@ Fields:
 - `updated_at` timestamptz not null
 
 Constraints:
+
 - unique `(provider, provider_subject)`
 - unique `(user_id, provider)` if you only want one identity per provider per user
 
 ---
 
 ### sessions
+
 Server-side login sessions.
 
 Fields:
+
 - `id` UUID primary key
 - `user_id` UUID foreign key -> `users.id`
 - `session_token_hash` text not null
@@ -68,6 +77,7 @@ Fields:
 - `user_agent_hash` text nullable
 
 Notes:
+
 - store only a hash of the session token, not the raw token
 - revocation should be cheap
 
@@ -76,9 +86,11 @@ Notes:
 ## Credits / Entitlements
 
 ### credit_wallets
+
 Represents the current spendable state for a user.
 
 Fields:
+
 - `user_id` UUID primary key foreign key -> `users.id`
 - `daily_balance` integer not null default 0
 - `bonus_balance` integer not null default 0
@@ -89,6 +101,7 @@ Fields:
 - `updated_at` timestamptz not null
 
 Notes:
+
 - `daily_balance` resets and does not stack.
 - `bonus_balance` can accumulate.
 - `subscription_balance` is optional and plan-driven.
@@ -96,9 +109,11 @@ Notes:
 ---
 
 ### credit_ledger_entries
+
 Append-only ledger for all credit events.
 
 Fields:
+
 - `id` UUID primary key
 - `user_id` UUID foreign key -> `users.id`
 - `entry_type` text not null
@@ -111,6 +126,7 @@ Fields:
 - `created_at` timestamptz not null
 
 Suggested `entry_type` values:
+
 - `daily_grant`
 - `bonus_topup`
 - `subscription_grant`
@@ -121,6 +137,7 @@ Suggested `entry_type` values:
 - `admin_adjustment`
 
 Notes:
+
 - positive amount = credit addition
 - negative amount = spend
 - every spend should be traceable back to a request / turn / tool event
@@ -128,9 +145,11 @@ Notes:
 ---
 
 ### user_entitlements
+
 Feature access per user.
 
 Fields:
+
 - `user_id` UUID primary key foreign key -> `users.id`
 - `plan_key` text not null default `free`
 - `nsfw_enabled` boolean not null default false
@@ -141,6 +160,7 @@ Fields:
 - `updated_at` timestamptz not null
 
 Notes:
+
 - this is where plan-based access lives
 - plan changes should update the entitlement row, not rewrite history
 
@@ -149,9 +169,11 @@ Notes:
 ## Provider Registry
 
 ### provider_profiles
+
 Represents a user-configured provider connection or alias mapping.
 
 Fields:
+
 - `id` UUID primary key
 - `user_id` UUID foreign key -> `users.id`
 - `label` text not null
@@ -164,15 +186,18 @@ Fields:
 - `updated_at` timestamptz not null
 
 Notes:
+
 - do not store raw API keys here for v1
 - capability metadata should include chat / tools / vision / image flags
 
 ---
 
 ### provider_models
+
 Normalized model catalog per provider profile.
 
 Fields:
+
 - `id` UUID primary key
 - `provider_profile_id` UUID foreign key -> `provider_profiles.id`
 - `alias` text not null
@@ -190,15 +215,18 @@ Fields:
 - `updated_at` timestamptz not null
 
 Notes:
+
 - the UI should show `alias` / `display_name`, not raw provider internals
 - cost is per chat turn unless overridden by tool pricing
 
 ---
 
 ### tool_providers
+
 Registry for non-chat tools such as weather or image generation.
 
 Fields:
+
 - `id` UUID primary key
 - `tool_key` text not null unique
 - `display_name` text not null
@@ -211,6 +239,7 @@ Fields:
 - `updated_at` timestamptz not null
 
 Examples:
+
 - `weather.current`
 - `weather.forecast`
 - `image.generate`
@@ -220,9 +249,11 @@ Examples:
 ## Characters
 
 ### character_catalog_entries
+
 Public or curated characters visible in the shared catalog.
 
 Fields:
+
 - `id` UUID primary key
 - `owner_user_id` UUID nullable foreign key -> `users.id`
 - `visibility` text not null default `public`
@@ -245,49 +276,77 @@ Fields:
 - `deleted_at` timestamptz nullable
 
 Notes:
+
 - this table is for shared catalog content only
 - private character drafts should stay client-side in v1
 
 ---
 
 ### character_catalog_versions
+
 Version history for catalog entries.
 
 Fields:
+
 - `id` UUID primary key
 - `character_id` UUID foreign key -> `character_catalog_entries.id`
 - `version_number` integer not null
 - `diff_summary` text nullable
 - `snapshot` jsonb not null
+- `created_by_user_id` UUID nullable foreign key -> `users.id`
 - `created_at` timestamptz not null
 
 Notes:
-- useful for moderation and rollback
-- can store the full JSON snapshot of a character card
+
+- use for moderation rollback and audit trails
 
 ---
 
-### character_votes
-Optional ranking signal.
+## Secrets / Sync Metadata
+
+### app_secret_inventory
+
+This is not for raw secrets. It is a registry of secret kinds and where they belong.
 
 Fields:
+
 - `id` UUID primary key
-- `character_id` UUID foreign key -> `character_catalog_entries.id`
-- `user_id` UUID foreign key -> `users.id`
-- `vote_value` smallint not null
+- `secret_key` text not null unique
+- `owner_scope` text not null
+- `storage_class` text not null
+- `description` text not null
 - `created_at` timestamptz not null
+- `updated_at` timestamptz not null
+
+Suggested values:
+
+- `owner_scope`: `user`, `app`, `system`
+- `storage_class`: `client_encrypted`, `server_env`, `external_secret_manager`
 
 Notes:
-- keep optional for later if ranking is needed
+
+- store the rule, not the secret
+- raw secrets still live in the appropriate secret store
+
+---
+
+## Why this is the right first schema
+
+- Postgres handles accounts, credits, and catalog data cleanly.
+- It gives you auditable history through ledger entries.
+- It keeps the app small without forcing premature multi-database complexity.
+- It leaves room for a later split if scale or security boundaries demand it.
 
 ---
 
 ## Location / Weather Consent
 
 ### user_location_settings
+
 Stores explicit user permission and defaults for weather/location usage.
 
 Fields:
+
 - `user_id` UUID primary key foreign key -> `users.id`
 - `location_enabled` boolean not null default false
 - `location_precision` text not null default `coarse`
@@ -299,6 +358,7 @@ Fields:
 - `updated_at` timestamptz not null
 
 Notes:
+
 - do not store exact coordinates unless the product later needs them
 - user should be able to revoke location usage cleanly
 
@@ -307,9 +367,11 @@ Notes:
 ## Media / Avatar Strategy
 
 ### v1 recommendation
+
 Do not create a general image storage subsystem yet.
 
 Use:
+
 - `avatar_url` for catalog/public assets
 - client-side local storage for private avatars
 - optional later object storage if the feature pressure is real
@@ -321,6 +383,7 @@ If you later need server-managed avatars, add a dedicated `media_assets` table.
 ## Optional Future Tables
 
 These are intentionally not required for v1:
+
 - `conversation_threads`
 - `conversation_messages`
 - `message_embeddings`
@@ -337,6 +400,7 @@ These are intentionally not required for v1:
 ## Indexes to Add Early
 
 Recommended indexes:
+
 - `auth_identities(provider, provider_subject)` unique index
 - `sessions(user_id)`
 - `sessions(session_token_hash)` unique index
@@ -363,6 +427,7 @@ Recommended indexes:
 ## Recommended First Migration
 
 Start with these tables first:
+
 - `users`
 - `auth_identities`
 - `sessions`

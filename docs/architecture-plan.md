@@ -5,23 +5,14 @@
 A lightweight AI chatbot / assistant platform with:
 - Google/GitHub OAuth login
 - BYOK model providers (user brings API key + base URL)
-- Model-specific credit costs
-- Character catalog + user-defined character cards
-- Optional weather tool via Open-Meteo
-- Image generation via one or more user-configurable endpoints
-- Basic monetization / entitlement hooks for future paid tiers
-- Privacy-first handling of sensitive user data
+- model-specific credit costs
+- character catalog + user-defined character cards
+- optional weather tool via Open-Meteo
+- image generation via one or more user-configurable endpoints
+- basic monetization / entitlement hooks for future paid tiers
+- privacy-first handling of sensitive user data
 
-This is intentionally **not** a giant memory-heavy consumer chat app. It should stay small, understandable, and cheap to operate.
-
----
-
-## Source of Truth Docs
-
-- Roadmap SOT: `docs/roadmap-sot.md`
-- Initial schema: `docs/schema-initial.md`
-
-If anything conflicts, the roadmap and schema docs win.
+This is intentionally **not** a giant memory-heavy consumer chat app. It should stay small, understandable, and cheap to run.
 
 ---
 
@@ -228,6 +219,56 @@ If the user wants sync across devices, encrypt credentials before syncing.
 
 ---
 
+## Secret Handling Strategy
+
+### Two classes of secrets
+
+#### 1) User-owned secrets
+These belong to the user and should stay private to their account/device:
+- BYOK API keys
+- user-provided base URLs
+- optional user-specific provider tokens
+
+Recommended storage:
+- local browser storage, encrypted at rest
+- never sent to other users
+- never copied into public catalog data
+
+#### 2) App-owned secrets
+These belong to the platform and must never ship to the browser:
+- Supabase service role key
+- OAuth client secrets
+- server-side database credentials
+- any built-in provider key used by the app itself
+
+Recommended storage:
+- deployed environment variables on the hosting platform
+- local `.env.local` for development only
+- never committed to git
+
+### Important routing rule
+If the browser would need a secret to call a provider directly, that secret is already in the wrong place.
+
+Use one of these patterns instead:
+- **BYOK direct from client** for user-owned keys only
+- **serverless / route-handler proxy** for app-owned secrets
+
+### Built-in model / image generation
+If the app pays for a shared provider key:
+- do **not** expose that key in the client
+- call the provider through a serverless endpoint or route handler
+- keep the provider key in environment variables
+
+If you truly want zero backend for a feature, then that feature must be BYOK only.
+
+### Supabase secret placement
+If Supabase is used for auth or database access:
+- public anon key can be used in the client
+- service role key must stay server-side only
+- any admin database credential stays server-side only
+
+---
+
 ## Location / Weather Privacy
 
 ### Consent model
@@ -272,7 +313,14 @@ If the user wants sync across devices, encrypt credentials before syncing.
 - **Server DB**: shared, account, entitlement data
 - **Client storage**: private user data
 
-This is the compromise that keeps the system sane.
+### Database recommendation
+Use **Postgres first** as the canonical server database.
+
+Why:
+- good fit for users / auth / credits / catalog
+- easy to model with migrations
+- flexible enough for later expansion
+- avoids splitting core state across too many systems too early
 
 ---
 
@@ -320,7 +368,7 @@ This should be treated like a capability flag, not a hidden mode.
 
 ### Backend
 - Next.js route handlers or small separate API
-- DB for auth/credits/catalog
+- Postgres for auth / credits / catalog
 - cached weather tool
 - image tool adapters
 

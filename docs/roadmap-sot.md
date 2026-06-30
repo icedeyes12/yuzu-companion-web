@@ -259,28 +259,64 @@ Location should be minimal, explicit, and revocable.
 - moderation hooks for public content
 
 ### Exit criteria
-- account can be free, member, or restricted by feature flags
-- entitlements affect credit grants and access controls
-- policy-gated features are explicit in the UI
+- plan flags are enforced server-side
+- premium access can be turned on/off without redeploying
+- moderation of public catalog content is possible
 
 ---
 
-## Milestone 9 — Hardening
+## Milestone 9 — Secrets + Deployment Boundary
 
-**Goal:** make the product safe to operate with real users.
+**Goal:** no secret is forced into the wrong place.
 
 ### In scope
-- abuse detection
-- request throttling
-- audit trails for credits
-- retry-safe payment or top-up hooks
-- error reporting
-- admin tooling
+- app-owned provider secrets in server-side env vars
+- user-owned BYOK secrets in encrypted client storage
+- serverless route handlers for any request that must hide app-owned secrets
+- documentation for where to store each secret class
 
 ### Exit criteria
-- crashes and failed requests are observable
-- abuse does not burn the whole budget
-- account state is recoverable
+- user knows where to store their own provider key
+- app-owned built-in provider keys never ship to the browser
+- Supabase / DB / payment / webhook secrets are stored as server secrets only
+
+---
+
+## Secret Placement Rules
+
+### User-owned secrets
+Store in the client first, encrypted if possible:
+- BYOK API key
+- BYOK base URL token if any
+- provider-specific user credentials
+
+### App-owned secrets
+Store as server-side environment variables only:
+- built-in model provider API keys
+- built-in image generation provider keys
+- Supabase service role key
+- webhook secrets
+- payment provider secret keys
+- any internal admin token
+
+### Shared rule
+If a secret can affect multiple users or the whole app, it belongs on the server. If it belongs only to one user’s personal provider setup, it belongs to that user’s encrypted local storage.
+
+---
+
+## v1 Cutline
+
+If scope gets tight, keep only:
+- OAuth login
+- Postgres-backed auth + credits + catalog
+- client-side private characters
+- BYOK secret storage in client
+- weather cached server-side
+- image generation charged per output
+- chat turn pricing
+- no conversation history in server DB yet
+
+That is the smallest version that still feels real.
 
 ---
 
