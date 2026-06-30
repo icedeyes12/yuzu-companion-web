@@ -12,7 +12,16 @@ A lightweight AI chatbot / assistant platform with:
 - Basic monetization / entitlement hooks for future paid tiers
 - Privacy-first handling of sensitive user data
 
-This is intentionally **not** a giant memory-heavy consumer chat app. It should stay small, understandable, and cheap to run.
+This is intentionally **not** a giant memory-heavy consumer chat app. It should stay small, understandable, and cheap to operate.
+
+---
+
+## Source of Truth Docs
+
+- Roadmap SOT: `docs/roadmap-sot.md`
+- Initial schema: `docs/schema-initial.md`
+
+If anything conflicts, the roadmap and schema docs win.
 
 ---
 
@@ -258,11 +267,10 @@ If the user wants sync across devices, encrypt credentials before syncing.
 - private conversations
 - private local characters
 - API keys
-- local avatar files
 
 ### Suggested split
 - **Server DB**: shared, account, entitlement data
-- **Client storage**: private user content
+- **Client storage**: private user data
 
 This is the compromise that keeps the system sane.
 
@@ -325,7 +333,7 @@ This should be treated like a capability flag, not a hidden mode.
 
 ## Roadmap Phases
 
-### Phase 0 — Architecture lock
+### Phase 0 — Architecture Lock
 - finalize server/client boundary
 - finalize credit rules
 - finalize what gets stored where
