@@ -12,6 +12,8 @@ This is the first-pass schema for the server-side system of record.
 - Use credit ledger entries instead of mutating a single balance field with no history.
 - Treat Postgres as the first and primary server database.
 - Do not split into a separate admin database unless a real admin feature needs it.
+- Assume SQL migrations and raw queries for v1; no Prisma/ORM requirement.
+- Use the Supabase transaction pooler for server runtime connections.
 - Keep the schema v1-friendly: only tables that directly support auth, credits, provider registry, catalog, and tool metadata.
 
 ---

@@ -308,19 +308,15 @@ If a secret can affect multiple users or the whole app, it belongs on the server
 
 ### Frontend
 - Next.js on Vercel
-- App Router
 - client-side local state for private stuff
 - server calls only for auth, credits, catalog, shared data
 
-### Data
-- Postgres as the first and primary server-side database
-- client storage for private user data
-- no separate admin database for v1 unless a real need appears
-
-### Backend boundary
-- use route handlers / serverless functions only when the app must hide app-owned secrets
-- if a feature is BYOK-only, the client can talk to the provider directly
-- if a feature uses an app-owned shared key, that call must go through a server-side boundary
+### Backend / Data Access
+- Postgres as the first and primary database
+- Vercel app using the Supabase **transaction pooler** for runtime DB connections
+- no Prisma/ORM for v1
+- raw SQL or a very thin query layer for app queries
+- SQL migration files for schema changes
 
 ### Storage
 - server DB for shared state

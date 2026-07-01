@@ -2,7 +2,8 @@
 
 ## Phase 1 — Data Foundation
 - [ ] Finalize Postgres schema
-- [ ] Add migrations
+- [ ] Add SQL migrations
+- [ ] Decide runtime DB access pattern: Supabase transaction pooler + raw SQL/thin query layer
 - [ ] Define seed data for Yuzu + starter catalog
 - [ ] Confirm env vars needed for runtime
 
