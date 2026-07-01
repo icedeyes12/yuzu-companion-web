@@ -10,7 +10,8 @@ This is the first-pass schema for the server-side system of record.
 - Prefer client-side encrypted storage for sensitive provider credentials.
 - Keep public catalog data separate from private local character data.
 - Use credit ledger entries instead of mutating a single balance field with no history.
-- Use Postgres as the first and primary server database.
+- Treat Postgres as the first and primary server database.
+- Do not split into a separate admin database unless a real admin feature needs it.
 
 ---
 

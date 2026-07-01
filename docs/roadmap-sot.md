@@ -304,6 +304,31 @@ If a secret can affect multiple users or the whole app, it belongs on the server
 
 ---
 
+## Recommended MVP Stack
+
+### Frontend
+- Next.js on Vercel
+- App Router
+- client-side local state for private stuff
+- server calls only for auth, credits, catalog, shared data
+
+### Data
+- Postgres as the first and primary server-side database
+- client storage for private user data
+- no separate admin database for v1 unless a real need appears
+
+### Backend boundary
+- use route handlers / serverless functions only when the app must hide app-owned secrets
+- if a feature is BYOK-only, the client can talk to the provider directly
+- if a feature uses an app-owned shared key, that call must go through a server-side boundary
+
+### Storage
+- server DB for shared state
+- browser storage for private user data
+- optional object storage later only if needed
+
+---
+
 ## v1 Cutline
 
 If scope gets tight, keep only:
