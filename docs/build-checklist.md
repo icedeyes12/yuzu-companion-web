@@ -48,3 +48,5 @@
 - [ ] A user can pick a character
 - [ ] Weather and image tools work
 - [ ] The app stays privacy-first and cheap to run
+
+> Note: Phase 1 is the only thing to build before auth.

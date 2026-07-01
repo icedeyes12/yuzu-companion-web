@@ -12,6 +12,7 @@ This is the first-pass schema for the server-side system of record.
 - Use credit ledger entries instead of mutating a single balance field with no history.
 - Treat Postgres as the first and primary server database.
 - Do not split into a separate admin database unless a real admin feature needs it.
+- Keep the schema v1-friendly: only tables that directly support auth, credits, provider registry, catalog, and tool metadata.
 
 ---
 
@@ -293,41 +294,50 @@ Fields:
 - `character_id` UUID foreign key -> `character_catalog_entries.id`
 - `version_number` integer not null
 - `diff_summary` text nullable
-- `snapshot` jsonb not null
-- `created_by_user_id` UUID nullable foreign key -> `users.id`
+- `payload` jsonb not null
 - `created_at` timestamptz not null
+- `created_by_user_id` UUID nullable foreign key -> `users.id`
 
 Notes:
 
-- use for moderation rollback and audit trails
+- keeps the catalog auditable
+- supports rollback and moderation review
 
 ---
 
-## Secrets / Sync Metadata
+## Minimum v1 Table Set
 
-### app_secret_inventory
+If you want the smallest coherent production schema, start with:
 
-This is not for raw secrets. It is a registry of secret kinds and where they belong.
+- `users`
+- `auth_identities`
+- `sessions`
+- `credit_wallets`
+- `credit_ledger_entries`
+- `user_entitlements`
+- `provider_profiles`
+- `provider_models`
+- `tool_providers`
+- `character_catalog_entries`
+- `character_catalog_versions`
 
-Fields:
+That is enough for login, billing-like usage, provider config, and shared character catalog.
 
-- `id` UUID primary key
-- `secret_key` text not null unique
-- `owner_scope` text not null
-- `storage_class` text not null
-- `description` text not null
-- `created_at` timestamptz not null
-- `updated_at` timestamptz not null
+---
 
-Suggested values:
+## Out of Scope for v1
 
-- `owner_scope`: `user`, `app`, `system`
-- `storage_class`: `client_encrypted`, `server_env`, `external_secret_manager`
+Do not add these yet unless there is a real reason:
 
-Notes:
+- conversation history tables
+- message attachments / file storage tables
+- private character sync tables
+- avatar upload pipeline tables
+- payment processor tables
+- admin audit dashboards beyond simple logs
+- semantic memory tables
 
-- store the rule, not the secret
-- raw secrets still live in the appropriate secret store
+Keep the first schema boring and usable.
 
 ---
 
